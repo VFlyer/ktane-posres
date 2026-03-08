@@ -812,7 +812,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ModuleType: positiveResistance
   ModuleDisplayName: Positive-Resistance
-  RequiresTimerVisibility: 1
+  RequiresTimerVisibility: 0
 --- !u!114 &114902094130605786
 MonoBehaviour:
   m_ObjectHideFlags: 1
