@@ -119,7 +119,7 @@ public class posResScript : MonoBehaviour
     private string inputtedAnswer = "";
     private bool stopCorouts;
 
-    private bool tpReady;
+    private bool tpReady, TPWaitForInput;
     
     private int numberBase, amountOfDigits, timer;
 
@@ -209,6 +209,7 @@ public class posResScript : MonoBehaviour
         {
             if (tapQueued)
             {
+                TPWaitForInput = true;
                 if (second) amount2 = 0;
                 else amount1 = 0;
                 Center.color= Color.white;
@@ -227,6 +228,7 @@ public class posResScript : MonoBehaviour
                     ProgressBar.transform.localScale = new Vector3(12*timerTC/100f, 1, 1);
                     yield return new WaitForSeconds(0.01f);
                 }
+                TPWaitForInput = false;
                 ProgressBar.transform.localScale = new Vector3(0, 1, 1);
                 if (amount1 < 7 && amount2 < 7)
                 {
@@ -293,7 +295,7 @@ public class posResScript : MonoBehaviour
         coverBusy = true;
         statusBusy = true;
         Center.text = "...!";
-        Debug.LogFormat("[Positive-Resistance #{0}] Submitted {1} and expected {2} . {3}.", ModuleId, inputtedAnswer, X.toBase36(), 
+        Debug.LogFormat("[Positive-Resistance #{0}] Submitted \"{1}\" and expected \"{2}\". {3}.", ModuleId, inputtedAnswer, X.toBase36(), 
             X.toBase36()==inputtedAnswer?"Correct":"Incorrect");
         yield return new WaitForSeconds(2f);
         Audio.HandlePlaySoundAtTransform(clips[4].name, transform);
@@ -320,7 +322,7 @@ public class posResScript : MonoBehaviour
             coverBusy = false;
             statusBusy = false;
             tpReady = false;
-            Debug.LogFormat("[Positive-Resistance #{0}] Your new answer is {1} ({2} in base-36).", ModuleId, X, X.toBase36());
+            Debug.LogFormat("[Positive-Resistance #{0}] Your new answer is \"{1}\" (\"{2}\" in base-36).", ModuleId, X, X.toBase36());
             state = 0;
             presses = 5;
             Center.text = "5";
@@ -391,7 +393,7 @@ public class posResScript : MonoBehaviour
         A = BaseNInt.Random();
         
         Debug.LogFormat("[Positive-Resistance #{0}] Base-{1}, {2} digits.", ModuleId, BaseNInt.NumberBase, BaseNInt.AmountOfDigits);
-        Debug.LogFormat("[Positive-Resistance #{0}] Your answer is {1} ({2} in base-36).", ModuleId, X, X.toBase36());
+        Debug.LogFormat("[Positive-Resistance #{0}] Your answer is \"{1}\" (\"{2}\" in base-36).", ModuleId, X, X.toBase36());
         
         Cover.OnInteract += delegate { if (coverBusy) return false; modulePress(); return false;};
         Status.OnInteract += delegate{if (statusBusy) return false; statusPress(); return false;};
@@ -450,16 +452,17 @@ public class posResScript : MonoBehaviour
 
 #pragma warning disable 414
     private readonly string TwitchHelpMessage = "Use !{0} 1-6 to press module 1-6 times. Use !{0} S to press status light. You can use multiple commands at once, for example: !{0} 12 22 31S.";
+    private bool TwitchShouldCancelCommand;
 #pragma warning restore 414
     
     public IEnumerator ProcessTwitchCommand (string Command) {
-        yield return null;
         string comm = Command.ToUpper();
         foreach(char c in comm) {if (!"123456 S".Contains(c))
         {
             yield return "sendtochaterror Invalid command.";
             yield break;
         }}
+        yield return null;
         foreach (char c in comm)
         {
             switch (c)
@@ -467,6 +470,11 @@ public class posResScript : MonoBehaviour
                 case 'S':
                 {
                     Status.OnInteract();
+                    if (state == 2)
+                    {
+                        yield return "solve";
+                        yield return "strike";
+                    }
                     break;
                 }
                 case ' ':
@@ -483,7 +491,12 @@ public class posResScript : MonoBehaviour
                     break;
                 }
             }
-            yield return new WaitForSeconds(2.5f);
+            yield return new WaitWhile(() => !TwitchShouldCancelCommand && TPWaitForInput);
+            if (TwitchShouldCancelCommand)
+            {
+                yield return "cancelled";
+                yield break;
+            }
         }
     }
 
@@ -514,12 +527,12 @@ public class posResScript : MonoBehaviour
                     Cover.OnInteract();
                     yield return new WaitForSeconds(.1f);
                 }
-                yield return new WaitForSeconds(2.5f);
+                yield return new WaitWhile(() => TPWaitForInput);
                 for (int i = 0; i < amount2; i++) {
                     Cover.OnInteract();
                     yield return new WaitForSeconds(.1f);
                 }
-                yield return new WaitForSeconds(2.5f);
+                yield return new WaitWhile(() => TPWaitForInput);
             }
             Status.OnInteract();
         }
