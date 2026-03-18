@@ -525,12 +525,12 @@ public class posResScript : MonoBehaviour
                 for (int i = 0; i < amount1; i++)
                 {
                     Cover.OnInteract();
-                    yield return new WaitForSeconds(.1f);
+                    yield return new WaitWhile(() => tapQueued);
                 }
                 yield return new WaitWhile(() => TPWaitForInput);
                 for (int i = 0; i < amount2; i++) {
                     Cover.OnInteract();
-                    yield return new WaitForSeconds(.1f);
+                    yield return new WaitWhile(() => tapQueued);
                 }
                 yield return new WaitWhile(() => TPWaitForInput);
             }
