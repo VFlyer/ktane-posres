@@ -470,11 +470,8 @@ public class posResScript : MonoBehaviour
                 case 'S':
                 {
                     Status.OnInteract();
-                    if (state == 2)
-                    {
-                        yield return "solve";
-                        yield return "strike";
-                    }
+                    if (state == 3)
+                        yield return inputtedAnswer == X.toBase36() ? "solve" : "strike";
                     break;
                 }
                 case ' ':
